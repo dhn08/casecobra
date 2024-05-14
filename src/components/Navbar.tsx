@@ -9,7 +9,7 @@ const Navbar = () => {
   const user = undefined;
   const isAdmin = false;
   const data = auth();
-  console.log(data);
+  // console.log(data);
   const { userId } = auth();
 
   return (
