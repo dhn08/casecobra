@@ -8,6 +8,8 @@ import { auth } from "@clerk/nextjs/server";
 const Navbar = () => {
   const user = undefined;
   const isAdmin = false;
+  const data = auth();
+  console.log(data);
   const { userId } = auth();
 
   return (
