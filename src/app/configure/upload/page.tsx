@@ -1,31 +1,67 @@
 "use client";
 
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/components/ui/use-toast";
+import convertFileToBase64 from "@/lib/convertFileToBase64";
 import { cn } from "@/lib/utils";
+import axios from "axios";
 import {
   Image,
   ImageIcon,
   Loader2,
   MousePointerSquareDashed,
 } from "lucide-react";
+import { config } from "process";
 import { useState, useTransition } from "react";
 import Dropzone, { FileRejection } from "react-dropzone";
 
 const Page = () => {
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
-  const [uploadProgress,setUploadProgress] = useState<number>(45);
-  const onDropRejected = () => {};
-  const onDropAccepted = () => {
-    console.log("File accepted");
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setisUploading] = useState<boolean>(false);
+  const { toast } = useToast();
+  const onDropRejected = (rejectedFiles: FileRejection[]) => {
+    const [file] = rejectedFiles;
+    toast({
+      title: `${file.file.type} type is not supported`,
+      description: "Please choose a PNG,JPG or JPEG image",
+      variant: "destructive",
+    });
   };
-  const isUploading = false;
+  const onDropAccepted = async (acceptedFiles: File[]) => {
+    console.log("File accepted");
+    console.log(acceptedFiles[0]);
+    setUploadProgress(0);
+
+    //   const formData = new FormData();
+    //  formData.append("image", acceptedFiles[0]);
+    const base64file = await convertFileToBase64(acceptedFiles[0]);
+    setisUploading(true);
+    const response = await axios.post(
+      "/api/upload-image",
+      {
+        base64file: base64file,
+        configId: undefined,
+      },
+      {
+        onUploadProgress: (progressEvent) => {
+          const { loaded, total = 100 } = progressEvent;
+          let percentCompleted = Math.round((loaded * 100) / total);
+          setUploadProgress(percentCompleted);
+        },
+      }
+    );
+    setisUploading(false);
+    console.log(response.data);
+  };
+
   const [isPending, startTransition] = useTransition();
 
   return (
     <div
       className={cn(
         "relative h-full flex-1 my-16 w-full rounded-xl bg-gray-900/5 p-2 ring-1 ring-inset ring-gray-900/10 lg:rounded-2xl flex justify-center flex-col items-center",
-        { "ring-blue-900/25 bg-blue-900/10 ": isDragOver },
+        { "ring-blue-900/25 bg-blue-900/10 ": isDragOver }
       )}
     >
       <div className="relative flex flex-1 flex-col items-center justify-center w-full">
@@ -55,19 +91,29 @@ const Page = () => {
                 {isUploading ? (
                   <div className="flex flex-col items-center">
                     <p>Uploading...</p>
-                    <Progress value={uploadProgress} className="mt-2 w-40 h-2 bg-gray-300" />
+                    <Progress
+                      value={uploadProgress}
+                      className="mt-2 w-40 h-2 bg-gray-300"
+                    />
                   </div>
                 ) : isPending ? (
                   <div className="flex flex-col items-center">
                     <p>Redirecting,please wait...</p>
                   </div>
                 ) : isDragOver ? (
-                  <p><span className="font-semibold">Drop file</span>to upload</p> 
+                  <p>
+                    <span className="font-semibold">Drop file</span>to upload
+                  </p>
                 ) : (
-                  <p><span className="font-semibold">Click to upload</span> or drag and drop</p> 
+                  <p>
+                    <span className="font-semibold">Click to upload</span> or
+                    drag and drop
+                  </p>
                 )}
               </div>
-              {isPending ? null:(<p className="text-sx text-zinc-500">PNG,JPG,JPEG</p>)}
+              {isPending ? null : (
+                <p className="text-sx text-zinc-500">PNG,JPG,JPEG</p>
+              )}
             </div>
           )}
         </Dropzone>
