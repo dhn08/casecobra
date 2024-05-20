@@ -11,6 +11,7 @@ import {
   Loader2,
   MousePointerSquareDashed,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { config } from "process";
 import { useState, useTransition } from "react";
 import Dropzone, { FileRejection } from "react-dropzone";
@@ -20,8 +21,10 @@ const Page = () => {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isUploading, setisUploading] = useState<boolean>(false);
   const { toast } = useToast();
+  const router = useRouter();
   const onDropRejected = (rejectedFiles: FileRejection[]) => {
     const [file] = rejectedFiles;
+    setIsDragOver(false);
     toast({
       title: `${file.file.type} type is not supported`,
       description: "Please choose a PNG,JPG or JPEG image",
@@ -52,6 +55,10 @@ const Page = () => {
       }
     );
     setisUploading(false);
+    setIsDragOver(false);
+    startTransition(() => {
+      router.push(`/configure/design?id=configId`);
+    });
     console.log(response.data);
   };
 
