@@ -19,6 +19,7 @@ const STEPS = [
     url: "/preview",
   },
 ];
+
 const Steps = () => {
   const pathname = usePathname();
   return (

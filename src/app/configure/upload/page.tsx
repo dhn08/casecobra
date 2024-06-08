@@ -57,7 +57,9 @@ const Page = () => {
     setisUploading(false);
     setIsDragOver(false);
     startTransition(() => {
-      router.push(`/configure/design?id=configId`);
+      router.push(
+        `/configure/design?id=${response.data?.configId || "configId"}`
+      );
     });
     console.log(response.data);
   };
