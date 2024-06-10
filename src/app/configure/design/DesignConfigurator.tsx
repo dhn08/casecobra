@@ -6,7 +6,7 @@ import { cn, formatPrice } from "@/lib/utils";
 import NextImage from "next/image";
 import { Rnd } from "react-rnd";
 import { Radio, RadioGroup, Label, Description } from "@headlessui/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   COLORS,
   FINISHES,
@@ -22,13 +22,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, ChevronsUpDown } from "lucide-react";
-import { DropdownMenuLabel } from "@radix-ui/react-dropdown-menu";
+
 import { BASE_PRICE } from "@/config/product";
-import { resolve } from "path";
-import { type } from "os";
+
 import axios from "axios";
 import convertFileToBase64 from "@/lib/convertFileToBase64";
 import { useToast } from "@/components/ui/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { SaveConfigArgs, saveConfig as _saveConfig } from "./actions";
+import { useRouter } from "next/navigation";
 
 interface DesignConfiguratorProps {
   configId: string;
@@ -41,6 +43,24 @@ const DesignConfigurator = ({
   imgDimensions,
 }: DesignConfiguratorProps) => {
   const { toast } = useToast();
+  const router = useRouter();
+
+  const { mutate: saveConfig } = useMutation({
+    mutationKey: ["save-config"],
+    mutationFn: async (args: SaveConfigArgs) => {
+      await Promise.all([saveConfiguration(), _saveConfig(args)]);
+    },
+    onError: () => {
+      toast({
+        title: "Something went wrong",
+        description: "There was an error on our end,Please try again",
+      });
+    },
+    onSuccess: () => {
+      router.push(`/configure/preview?id=${configId}`);
+    },
+  });
+
   const [options, setoptions] = useState<{
     color: (typeof COLORS)[number];
     model: (typeof MODELS.options)[number];
@@ -353,7 +373,15 @@ const DesignConfigurator = ({
               </p>
             </div>
             <Button
-              onClick={() => saveConfiguration()}
+              onClick={() =>
+                saveConfig({
+                  configId,
+                  color: options.color.value,
+                  finish: options.finish.value,
+                  material: options.material.value,
+                  model: options.model.value,
+                })
+              }
               size="sm"
               className="w-full"
             >
